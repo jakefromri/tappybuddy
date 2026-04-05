@@ -112,6 +112,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   } catch (err) {
     try { fs.unlinkSync(audioFilePath) } catch { /* ignore */ }
     console.error('Processing error:', err)
-    return send(500, { error: 'Something went wrong. Try again!' })
+    const debug = err instanceof Error ? err.message : String(err)
+    return send(500, { error: 'Something went wrong. Try again!', debug })
   }
 }
