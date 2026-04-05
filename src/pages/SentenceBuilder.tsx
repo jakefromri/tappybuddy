@@ -44,8 +44,6 @@ interface WordCardProps {
 }
 
 function WordCard({ word, mode, isFlipped, isLastPlayed, onPlay, onFlip }: WordCardProps) {
-  const showFull = mode === 'full' || isFlipped
-
   if (mode === 'full') {
     // Simple tap-to-play, no flip
     return (
