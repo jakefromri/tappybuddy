@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 import formidable from 'formidable'
 import fs from 'fs'
-import OpenAI from 'openai'
+import OpenAI, { toFile } from 'openai'
 
 // Tell Vercel not to parse the body — we'll handle multipart ourselves
 export const config = {
@@ -52,6 +52,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   })
 
   let audioFilePath: string
+  let audioMimeType: string
   try {
     const [, files] = await form.parse(req)
     const audioFile = files.audio?.[0]
@@ -59,14 +60,21 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return send(400, { error: 'No audio file provided' })
     }
     audioFilePath = audioFile.filepath
+    audioMimeType = audioFile.mimetype || 'audio/webm'
   } catch {
     return send(400, { error: 'Failed to parse audio upload' })
   }
 
   try {
     // Step 1: Transcribe with Whisper
+    const ext = audioMimeType.includes('mp4') ? 'mp4'
+      : audioMimeType.includes('ogg') ? 'ogg'
+      : audioMimeType.includes('wav') ? 'wav'
+      : 'webm'
+    const audioBuffer = fs.readFileSync(audioFilePath)
+    const audioFile = await toFile(audioBuffer, `audio.${ext}`, { type: audioMimeType })
     const transcription = await openai.audio.transcriptions.create({
-      file: fs.createReadStream(audioFilePath),
+      file: audioFile,
       model: 'whisper-1',
       response_format: 'text',
     })
